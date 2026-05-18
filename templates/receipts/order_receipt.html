@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            color: #000;
+            width: 74mm;
+            margin: 0 auto;
+            padding: 2mm;
+            letter-spacing: -0.2px;
+            background: #fff;
+            line-height: 1.25;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .font-bold {
+            font-weight: bold;
+        }
+
+        .upper {
+            text-transform: uppercase;
+        }
+
+        .header {
+            margin-bottom: 5px;
+        }
+
+        .divider {
+            border-top: 1px dashed #000;
+            margin: 4px 0;
+        }
+
+        .asterisks {
+            text-align: center;
+            letter-spacing: 2px;
+            margin: 2px 0;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td,
+        th {
+            vertical-align: top;
+            padding: 2px 0;
+        }
+
+        .big-total {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 6px 0;
+        }
+
+        .barcode-container {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .barcode-img {
+            max-width: 100%;
+            height: 50px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header text-center">
+        <div class="font-bold" style="font-size: 16px; margin-bottom: 2px;">VET TAKHIROV</div>
+        <div class="asterisks">************************</div>
+        <div>VET TAKHIROV CLINIC & SHOP</div>
+        <div>Toshkent sh. Chilonzor</div>
+        <div>Tel: +998 90 123 45 67</div>
+        <div class="asterisks">************************</div>
+    </div>
+
+    <table style="margin-bottom: 5px;">
+        <tr>
+            <td style="width: 50%;">Hujjat:</td>
+            <td class="text-right upper">#{{ order.id }}</td>
+        </tr>
+        <tr>
+            <td>Sana:</td>
+            <td class="text-right">{{ order.created_at|date:"d.m.Y" }}</td>
+        </tr>
+        <tr>
+            <td>Vaqt:</td>
+            <td class="text-right">{{ order.created_at|date:"H:i" }}</td>
+        </tr>
+        <tr>
+            <td>Kassir:</td>
+            <td class="text-right">Admin/Sotuvchi</td>
+        </tr>
+    </table>
+
+    <div class="divider"></div>
+
+    <!-- Items -->
+    <table>
+        {% for item in items %}
+        <tr>
+            <td colspan="2" class="upper font-bold">{{ item.product.name }}</td>
+        </tr>
+        <tr>
+            <td>{{ item.quantity }} x {{ item.price|floatformat:0 }}</td>
+            <td class="text-right">{{ item.total_price|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="divider"></div>
+
+    <!-- Totals -->
+    <table>
+        <tr>
+            <td>JAMI:</td>
+            <td class="text-right">{{ items_total|floatformat:0 }}</td>
+        </tr>
+        {% if discount > 0 %}
+        <tr>
+            <td>CHEGIRMA:</td>
+            <td class="text-right">-{{ discount|floatformat:0 }}</td>
+        </tr>
+        {% endif %}
+        {% if delivery_fee > 0 %}
+        <tr>
+            <td>YETKAZIB BERISH:</td>
+            <td class="text-right">{{ delivery_fee|floatformat:0 }}</td>
+        </tr>
+        {% endif %}
+    </table>
+
+    <div class="text-center big-total">
+        ITOG: {{ grand_total|floatformat:0 }}
+    </div>
+
+    <div class="text-center">XARIDINGIZ UCHUN RAHMAT!</div>
+
+    <div class="divider"></div>
+
+    <div
+        style="margin-top: 20px; border-bottom: 1px dotted #000; width: 80%; margin-left: auto; margin-right: auto; margin-bottom: 5px;">
+    </div>
+    <div class="text-center" style="font-size: 10px;">Kassir imzosi</div>
+
+    <div class="asterisks">************************</div>
+    <div class="text-center upper">TOVAR CHEKI</div>
+
+    {% if barcode_base64 %}
+    <div class="barcode-container">
+        <img src="data:image/png;base64,{{ barcode_base64 }}" class="barcode-img" />
+        <div style="letter-spacing: 3px; font-size: 10px; margin-top: 2px;">{{ order.id }}</div>
+    </div>
+    {% endif %}
+
+</body>
+
+</html>

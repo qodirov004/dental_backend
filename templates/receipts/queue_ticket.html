@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: 80mm 150mm; /* Bo'yi uzaytirildi, sig'ishi uchun */
+            margin: 1mm;
+        }
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 3mm;
+            color: #000;
+        }
+        .clinic-name {
+            font-size: 15pt;
+            font-weight: bold;
+            margin-bottom: 1mm;
+            border-bottom: 1.5px solid #000;
+            padding-bottom: 1mm;
+        }
+        .ticket-title {
+            font-size: 10pt;
+            margin-top: 1mm;
+            margin-bottom: 2mm;
+            letter-spacing: 1px;
+        }
+        .queue-number {
+            font-size: 52pt;
+            font-weight: bold;
+            margin: 2mm 0;
+            display: block;
+        }
+        .doctor-info {
+            font-size: 12pt;
+            margin-bottom: 3mm;
+            border-top: 1px dashed #000;
+            border-bottom: 1px dashed #000;
+            padding: 1.5mm 0;
+        }
+        .patient-info {
+            font-size: 10pt;
+            margin-bottom: 4mm;
+            text-align: left;
+            padding-left: 3mm;
+        }
+        .footer {
+            margin-top: 3mm;
+            font-size: 8pt;
+            border-top: 1px solid #000;
+            padding-top: 2mm;
+        }
+        .dev-info {
+            margin-top: 2mm;
+            font-size: 7pt;
+            color: #333;
+            line-height: 1.1;
+        }
+        .company-name {
+            font-weight: bold;
+            font-size: 8pt;
+            margin-bottom: 0.5mm;
+        }
+    </style>
+</head>
+<body>
+    <div class="clinic-name">DentalClinic Pro</div>
+    <div class="ticket-title">NAVBT CHEKI</div>
+    
+    <div class="queue-number">{{ visit.queue_number }}</div>
+    
+    <div class="doctor-info">
+        Shifokor: <strong>{{ visit.veterinarian.get_full_name|default:visit.veterinarian.username }}</strong>
+    </div>
+    
+    <div class="patient-info">
+        • Bemor: {{ visit.pet.name }}<br>
+        • Sana: {{ visit.arrived_at|date:"d.m.Y" }}<br>
+        • Vaqt: {{ visit.arrived_at|date:"H:i" }}
+    </div>
+
+    <div class="footer">
+        Navbatingizni kuting, salomat bo'ling!
+        
+        <div class="dev-info">
+            <div class="company-name">ArdentSoft</div>
+            Dasturchi: Qodirov Shahzodbek<br>
+            Tel: +998-91-860-34-43
+        </div>
+    </div>
+</body>
+</html>

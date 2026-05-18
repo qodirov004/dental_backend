@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 1cm; /* Margin kamaytirildi */
+        }
+        body {
+            font-family: sans-serif;
+            font-size: 11pt; /* Shrift biroz kichraytirildi */
+            line-height: 1.3;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 8px;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: #2563eb;
+            font-size: 20pt;
+            text-transform: uppercase;
+        }
+
+        .header p {
+            margin: 1px 0;
+            color: #666;
+            font-size: 9pt;
+        }
+
+        .section-title {
+            background-color: #f1f5f9;
+            padding: 4px 8px;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            border-left: 4px solid #2563eb;
+            font-size: 11pt;
+        }
+
+        .info-table {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .info-table td {
+            padding: 3px;
+            vertical-align: top;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #475569;
+            width: 110px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 1px solid #e2e8f0;
+            padding: 8px;
+            text-align: left;
+            font-size: 10pt;
+        }
+
+        .data-table th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: bold;
+        }
+
+        .total-box {
+            margin-top: 20px;
+            text-align: right;
+            padding: 8px;
+            border-top: 2px solid #2563eb;
+        }
+
+        .total-amount {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 8pt;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 15px;
+        }
+
+        .qr-section {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .warning-box {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #fffbeb;
+            border: 1px solid #fde68a;
+            font-size: 10pt;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>DentalClinic Pro</h1>
+        <p>Professional Stomatologiya Xizmati</p>
+        <p>Urganch shahri, Al-Xorazmiy ko'chasi | Tel: +998 90 123 45 67</p>
+    </div>
+
+    <table class="info-table">
+        <tr>
+            <td class="label">Mijoz:</td>
+            <td>{{ customer.name }}</td>
+            <td class="label">Sana:</td>
+            <td>{{ visit.arrived_at|date:"d.m.Y H:i" }}</td>
+        </tr>
+        <tr>
+            <td class="label">Bemor:</td>
+            <td>{{ pet.name }}</td>
+            <td class="label">Navbat №:</td>
+            <td><strong>{{ visit.queue_number }}</strong></td>
+        </tr>
+        <tr>
+            <td class="label">Telefon:</td>
+            <td>{{ customer.phone }}</td>
+            <td class="label">Shifokor:</td>
+            <td>{{ visit.veterinarian.get_full_name|default:visit.veterinarian.username }}</td>
+        </tr>
+    </table>
+
+    <div class="section-title">Muolaja tafsilotlari</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 25%;">Turi</th>
+                <th>Ma'lumot</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Tashxis</strong></td>
+                <td>{{ diagnosis|default:"Kiritilmagan" }}</td>
+            </tr>
+            <tr>
+                <td><strong>Qilingan ishlar</strong></td>
+                <td>{{ treatment|default:"Kiritilmagan" }}</td>
+            </tr>
+            {% if additional_conditions %}
+            <tr>
+                <td><strong>Qo'shimcha</strong></td>
+                <td>{{ additional_conditions }}</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    {% if additional_conditions %}
+    <div class="warning-box">
+        <strong>⚠️ Diqqat:</strong> Qo'shimcha kasalliklar aniqlangan: {{ additional_conditions }}
+    </div>
+    {% endif %}
+
+    <div class="total-box">
+        <div style="font-size: 10pt;">Umumiy to'lov:</div>
+        <div class="total-amount">{{ total_amount|floatformat:0 }} UZS</div>
+    </div>
+
+    <div class="footer">
+        {% if qr_code %}
+        <div class="qr-section">
+            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" style="width: 70px; height: 70px;">
+            <p style="margin-top: 3px;">Tish salomatligi tarixi (QR-kod)</p>
+        </div>
+        {% endif %}
+        <p>Xizmatimizdan foydalanganingiz uchun rahmat!</p>
+        <p>DentalClinic Pro — Tabassumingiz bizning baxtimiz!</p>
+    </div>
+</body>
+
+</html>

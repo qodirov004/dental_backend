@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Navbat Cheki</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            width: 80mm;
+            margin: 0 auto;
+            padding: 5mm;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12pt;
+            background: #fff;
+        }
+        .container {
+            width: 100%;
+            text-align: center;
+        }
+        .header {
+            font-size: 16pt;
+            font-weight: bold;
+            border-bottom: 2px dashed #000;
+            margin-bottom: 5mm;
+            padding-bottom: 2mm;
+        }
+        .subtitle {
+            font-size: 12pt;
+            margin-bottom: 3mm;
+            letter-spacing: 2px;
+        }
+        .queue-number {
+            font-size: 48pt;
+            font-weight: bold;
+            margin: 5mm 0;
+            letter-spacing: 3px;
+        }
+        .info {
+            text-align: left;
+            margin-bottom: 5mm;
+            line-height: 1.6;
+            font-size: 11pt;
+        }
+        .info strong {
+            display: inline-block;
+            min-width: 80px;
+        }
+        .footer {
+            border-top: 2px dashed #000;
+            padding-top: 3mm;
+            font-size: 10pt;
+            font-weight: bold;
+            margin-top: 5mm;
+        }
+        .dev {
+            font-size: 8pt;
+            margin-top: 3mm;
+            color: #555;
+            line-height: 1.4;
+        }
+        @media print {
+            @page {
+                margin: 0;
+                size: 80mm auto;
+            }
+            body {
+                width: 80mm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">DENTAL CLINIC PRO</div>
+        <div class="subtitle">NAVBAT CHEKI</div>
+        
+        <div class="queue-number" id="q-num">{{ q|default:"---" }}</div>
+        
+        <div class="info">
+            <strong>Bemor:</strong> <span id="p-name">{{ p|default:"Noma'lum" }}</span><br>
+            <strong>Shifokor:</strong> <span id="d-name">{{ d|default:"Ixtiyoriy" }}</span><br>
+            <strong>Sana:</strong> <span id="date">{{ t|default:"---" }}</span>
+        </div>
+
+        <div class="footer">
+            ILTIMOS NAVBATINGIZNI KUTING
+            <div class="dev">
+                ArdentSoft Systems<br>
+                Dasturchi: Q. Shahzodbek<br>
+                Tel: +998 91 860 34 43
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URL parametrlaridan olish (frontend fallback uchun)
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.get('q')) document.getElementById('q-num').innerText = urlParams.get('q');
+        if(urlParams.get('p')) document.getElementById('p-name').innerText = urlParams.get('p');
+        if(urlParams.get('d')) document.getElementById('d-name').innerText = urlParams.get('d');
+        if(urlParams.get('t')) document.getElementById('date').innerText = urlParams.get('t');
+
+        // Avtomatik chop etish
+        window.onload = function() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
