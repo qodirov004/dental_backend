@@ -1,0 +1,9 @@
+================================================================================
+Reset Status: Successfully reset password for receptionist 'reseption' to 'reseption123'
+--------------------------------------------------------------------------------
+Username        | Role         | Is Active  | Is Staff   | Has Usable Password 
+--------------------------------------------------------------------------------
+admin           | ADMIN        | True       | True       | True                
+aziz_doktor     | DOCTOR       | True       | False      | True                
+reseption       | RECEPTIONIST | True       | False      | True                
+================================================================================

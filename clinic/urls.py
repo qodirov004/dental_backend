@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CustomerViewSet, PetViewSet, MedicalRecordViewSet, VisitViewSet, VaccineScheduleViewSet, VisitFeedbackViewSet, PetTimelineView, DoctorKPIView, TTSProxyView
+from .views import CustomerViewSet, PetViewSet, MedicalRecordViewSet, VisitViewSet, VaccineScheduleViewSet, VisitFeedbackViewSet, PetTimelineView, DoctorKPIView, TTSProxyView, QueueEventsView
 
 from .analytics_views import AnalyticsSummaryView, RevenueChartView
 
@@ -15,6 +15,7 @@ router.register(r'feedback', VisitFeedbackViewSet)
 from .staff_views import StaffPerformanceView
 
 urlpatterns = [
+    path('visits/events/', QueueEventsView.as_view(), name='queue-events'),
     path('', include(router.urls)),
     path('analytics/summary/', AnalyticsSummaryView.as_view(), name='analytics-summary'),
     path('analytics/charts/', RevenueChartView.as_view(), name='analytics-charts'),

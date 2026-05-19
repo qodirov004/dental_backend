@@ -107,6 +107,7 @@ class Visit(models.Model):
     arrived_at = models.DateTimeField(auto_now_add=True)
     queue_number = models.CharField(max_length=10, null=True, blank=True) # Changed to CharField for A001 format
     total_amount = models.DecimalField(max_digits=20, decimal_places=2, default=0)
+    is_announced = models.BooleanField(default=False)
     bonus_credited = models.BooleanField(default=False)
     
     def __init__(self, *args, **kwargs):
@@ -114,6 +115,9 @@ class Visit(models.Model):
         self._old_status = self.status
 
     def save(self, *args, **kwargs):
+        if self.status == 'CALLED' and self._old_status != 'CALLED':
+            self.is_announced = False
+
         if not self.queue_number:
             today = timezone.now().date()
             prefix = "N" # Default prefix if no doctor assigned
@@ -144,6 +148,26 @@ class Visit(models.Model):
             self.queue_number = f"{prefix}{next_num:03d}"
             
         super().save(*args, **kwargs)
+        
+        # Publish real-time event via Redis Pub/Sub
+        try:
+            import redis
+            import json
+            r = redis.Redis.from_url('redis://localhost:6379/0')
+            event_data = {
+                "event": "queue_updated",
+                "visit_id": self.id,
+                "status": self.status,
+                "queue_number": self.queue_number,
+                "pet_name": self.pet.name,
+                "customer_name": self.pet.customer.name,
+                "veterinarian_first_name": self.veterinarian.first_name if self.veterinarian else "",
+                "veterinarian_last_name": self.veterinarian.last_name if self.veterinarian else "",
+                "room_number": self.veterinarian.room_number if self.veterinarian else ""
+            }
+            r.publish('queue_events', json.dumps(event_data))
+        except Exception as e:
+            print(f"Error publishing queue event: {e}")
 
     def __str__(self):
         return f"Visit {self.queue_number}: {self.pet.name} - {self.status} ({self.urgency_level})"

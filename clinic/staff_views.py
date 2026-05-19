@@ -10,9 +10,9 @@ class StaffPerformanceView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Get all users with roles that conduct visits (DOCTOR, ASSISTANT)
+        # Get all users with roles (ADMIN, DOCTOR, RECEPTIONIST, ASSISTANT)
         staff = User.objects.filter(
-            role__in=['ADMIN', 'DOCTOR', 'ASSISTANT']
+            role__in=['ADMIN', 'DOCTOR', 'RECEPTIONIST', 'ASSISTANT']
         ).distinct()
 
         period = request.query_params.get('period', 'month')

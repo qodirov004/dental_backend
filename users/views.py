@@ -39,3 +39,5 @@ class SystemSettingsViewSet(viewsets.ModelViewSet):
     serializer_class = SystemSettingsSerializer
     lookup_field = 'key'
     permission_classes = [permissions.AllowAny] # In prod, restrict this
+
+

@@ -72,3 +72,4 @@ qrcode==7.4.2
 WeasyPrint==63.1
 xhtml2pdf==0.2.16
 dj-database-url==2.1.0
+edge-tts==7.0.3

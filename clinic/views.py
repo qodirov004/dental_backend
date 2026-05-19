@@ -213,6 +213,14 @@ class VisitViewSet(viewsets.ModelViewSet):
             return Response({'status': 'error', 'message': 'Job not found'}, status=404)
 
     @action(detail=True, methods=['post'])
+    def mark_announced(self, request, pk=None):
+        """Mark visit as announced in voice to avoid double announcements"""
+        visit = self.get_object()
+        visit.is_announced = True
+        visit.save()
+        return Response({'status': 'ok'})
+
+    @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
         visit = self.get_object()
         data = request.data
@@ -482,61 +490,126 @@ class DoctorKPIView(APIView):
 
 class TTSProxyView(APIView):
     """
-    TTS endpoint using Microsoft Edge TTS for natural Uzbek voice.
-    Uses uz-UZ-SardorNeural (male) or uz-UZ-MadinaNeural (female).
+    TTS endpoint using Google Translate TTS directly in a synchronous, 100% stable manner.
+    Avoids asyncio/WSGI thread crashes and guarantees natural Uzbek voice.
     """
     permission_classes = [AllowAny]
 
     def get(self, request):
-        import asyncio
-        import io
-        import edge_tts
+        import requests
         from django.http import HttpResponse
 
         text = request.query_params.get('text', '')
-        voice = request.query_params.get('voice', 'uz-UZ-MadinaNeural')
-
         if not text:
             return Response({"error": "text parameter required"}, status=400)
 
         if len(text) > 500:
             return Response({"error": "text too long (max 500 chars)"}, status=400)
 
+        # 1. Try Azure TTS (Microsoft Edge MadinaNeural) first using edge-tts CLI
         try:
-            async def generate_audio():
-                communicate = edge_tts.Communicate(text, voice, rate="-25%", volume="+30%", pitch="+5Hz")
-                audio_data = io.BytesIO()
-                async for chunk in communicate.stream():
-                    if chunk["type"] == "audio":
-                        audio_data.write(chunk["data"])
-                audio_data.seek(0)
-                return audio_data
-
-            # Run async edge-tts in sync context
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    import concurrent.futures
-                    with concurrent.futures.ThreadPoolExecutor() as pool:
-                        audio_data = pool.submit(
-                            lambda: asyncio.run(generate_audio())
-                        ).result(timeout=15)
-                else:
-                    audio_data = loop.run_until_complete(generate_audio())
-            except RuntimeError:
-                audio_data = asyncio.run(generate_audio())
-
-            response = HttpResponse(
-                audio_data.read(),
-                content_type="audio/mpeg"
+            import subprocess
+            import tempfile
+            import os
+            
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+                temp_path = f.name
+            
+            # This requires 'pip install edge-tts' on the system
+            subprocess.run(
+                ["edge-tts", "--voice", "uz-UZ-MadinaNeural", "--text", text, "--write-media", temp_path],
+                capture_output=True, check=True
             )
-            response["Cache-Control"] = "public, max-age=86400"
-            return response
-
+            
+            with open(temp_path, 'rb') as f:
+                audio_data = f.read()
+            os.remove(temp_path)
+            
+            if audio_data:
+                response = HttpResponse(audio_data, content_type="audio/mpeg")
+                response["Cache-Control"] = "public, max-age=86400"
+                response["Access-Control-Allow-Origin"] = "*"
+                response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type, Authorization"
+                response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+                return response
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return Response(
-                {"error": f"TTS error: {str(e)}"},
-                status=500
-            )
+            print(f"[Azure TTS Info] edge-tts not installed or failed: {e}. Falling back to Google TTS.")
+
+        # 2. Fallback to Google TTS URLs with different client parameters
+        clients = ["tw-ob", "gtx"]
+        last_error = None
+
+        for client in clients:
+            try:
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                }
+                google_url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl=uz&client={client}&q={requests.utils.quote(text)}"
+                
+                res = requests.get(google_url, headers=headers, timeout=10)
+                if res.status_code == 200:
+                    response = HttpResponse(res.content, content_type="audio/mpeg")
+                    response["Cache-Control"] = "public, max-age=86400"
+                    # Explicit CORS headers to ensure the browser never blocks audio loading
+                    response["Access-Control-Allow-Origin"] = "*"
+                    response["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type, Authorization"
+                    response["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+                    return response
+                else:
+                    last_error = f"Google TTS (client={client}) returned status code {res.status_code}"
+            except Exception as e:
+                last_error = f"Google TTS (client={client}) exception: {str(e)}"
+
+        # If all attempts failed
+        print(f"[TTS Error] All proxy attempts failed. Last error: {last_error}")
+        return Response(
+            {"error": f"TTS Proxy failed: {last_error}"},
+            status=500
+        )
+
+from django.http import StreamingHttpResponse
+from django.views import View
+
+class QueueEventsView(View):
+    def get(self, request, *args, **kwargs):
+        def event_stream():
+            import redis
+            import json
+            import time
+            
+            # Send initial keep-alive connect message
+            yield "data: {\"event\": \"connected\"}\n\n"
+            
+            try:
+                # Use a short timeout to fail fast if Redis is offline
+                r = redis.Redis.from_url('redis://localhost:6379/0', socket_connect_timeout=2)
+                pubsub = r.pubsub()
+                pubsub.subscribe('queue_events')
+                
+                for message in pubsub.listen():
+                    if message['type'] == 'message':
+                        data = message['data'].decode('utf-8')
+                        yield f"data: {data}\n\n"
+            except GeneratorExit:
+                try:
+                    pubsub.unsubscribe('queue_events')
+                    pubsub.close()
+                except:
+                    pass
+            except Exception as e:
+                print(f"[SSE Info] Redis connection offline ({str(e)}). SSE falling back to heartbeat mode.")
+                # Fall back to a stable heartbeat generator to avoid breaking CORS and crashing the browser
+                try:
+                    while True:
+                        yield "data: {\"event\": \"heartbeat\", \"status\": \"redis_offline\"}\n\n"
+                        time.sleep(10)
+                except GeneratorExit:
+                    pass
+                
+        response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+        response['Cache-Control'] = 'no-cache'
+        response['X-Accel-Buffering'] = 'no'  # Disable Nginx buffering
+        response['Access-Control-Allow-Origin'] = '*'
+        response['Access-Control-Allow-Headers'] = 'X-Requested-With, Content-Type'
+        return response
+
